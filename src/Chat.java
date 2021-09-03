@@ -9,7 +9,15 @@ public class Chat {
 
     public void sendAll(String name, String message){
         for (Client client : clients) {
-            client.receive("[" + name + "]->" + message);
+            client.receive("[" + name + "]-> " + message);
+        }
+    }
+
+    public void personalMessage(String name, String message, String fromName){
+        for (Client client : clients){
+            if (client.getName().equals(name)){
+                client.receive("#" + fromName + "#-> " + message);
+            }
         }
     }
 
@@ -24,6 +32,16 @@ public class Chat {
             client.receive(name + " has left the chat...");
         }
     }
+
+    public boolean checkInClients(String name){
+        for(Client client : clients){
+            if(client.getName().equals(name)){
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     private void run() throws IOException {
         ServerSocket serverSocket = new ServerSocket(1234);

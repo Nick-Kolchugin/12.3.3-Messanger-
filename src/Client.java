@@ -4,6 +4,8 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.Socket;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Client implements Runnable{
 
@@ -14,6 +16,17 @@ public class Client implements Runnable{
     Scanner scanner;
     PrintStream ps;
 
+    Pattern patternLs = Pattern.compile("^(.*?)\\s(.*?)\\s(.*?)$");
+    Matcher matcher;
+
+    String lsCode = "";
+    String lsName = "";
+    String lsMsg = "";
+
+    public String getName() {
+        return name;
+    }
+
     public Client(Socket socket, Chat chat) {
         this.socket = socket;
         this.chat = chat;
@@ -23,6 +36,37 @@ public class Client implements Runnable{
 
     public void receive(String message){
         ps.println(message);
+    }
+
+    private boolean canSendLs(){
+        if(lsCode.equals("/ls") && chat.checkInClients(lsName)){
+            return true;
+        }
+        return false;
+    }
+
+    /*private String getPersonalMessageToName(Matcher matcher){
+        String name = null;
+        while(matcher.find()){
+            name = matcher.group(2);
+        }
+        return name;
+    }
+
+    private String getPersonalMessage(Matcher matcher){
+        String msg = null;
+        while(matcher.find()){
+            msg =  matcher.group(3);
+        }
+        return msg;
+    }*/
+
+    private void convert(Matcher matcher){
+        while (matcher.find()){
+            lsCode = matcher.group(1);
+            lsName = matcher.group(2);
+            lsMsg = matcher.group(3);
+        }
     }
 
     @Override
@@ -42,7 +86,19 @@ public class Client implements Runnable{
 
             while (!input.equals("EXIT")){
                 input = scanner.nextLine();
-                chat.sendAll(name, input);
+
+                matcher = patternLs.matcher(input);
+                convert(matcher);
+                if(canSendLs()){
+                    chat.personalMessage(lsName, lsMsg, name);
+                    lsCode = "";
+                    lsName = "";
+                    lsMsg = "";
+                }
+                else{
+                    chat.sendAll(name, input);
+                }
+
             }
             
             chat.goodbye(name);
